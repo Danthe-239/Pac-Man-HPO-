@@ -1,13 +1,13 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-canvas.width = 1100;
-canvas.height = 720;
+canvas.width = 1000;
+canvas.height = 760;
 
-const TILE = 32;
+const TILE = 28;
 
-const offsetX = 40;
-const offsetY = 70;
+const offsetX = 70;
+const offsetY = 170;
 
 const questionBox = document.getElementById("questionBox");
 const questionText = document.getElementById("questionText");
@@ -50,6 +50,8 @@ let lives = 3;
 
 let pelletsEaten = 0;
 
+let gamePaused = false;
+
 let estrogenBar = 0;
 let progesteroneBar = 0;
 let lhBar = 0;
@@ -57,6 +59,28 @@ let lhBar = 0;
 let estrogenMode = false;
 let progesteroneMode = false;
 let lhMode = false;
+
+const powers = {
+
+estrogen:{
+name:"Estrógeno",
+effect:"Duplica puntos",
+time:8000
+},
+
+progesterone:{
+name:"Progesterona",
+effect:"Ralentiza espermas",
+time:8000
+},
+
+lh:{
+name:"LH Surge",
+effect:"Permite comer espermas",
+time:8000
+}
+
+};
 
 const questions = [
 
@@ -76,13 +100,13 @@ power:"estrogen"
 
 {
 q:"¿Dónde ocurre la fecundación?",
-o:["Pulmón","Corazón","Trompas de Falopio","Hígado"],
+o:["Pulmón","Corazón","Trompas","Hígado"],
 a:2,
 power:"progesterone"
 },
 
 {
-q:"¿Qué hormona aumenta durante el embarazo?",
+q:"¿Qué hormona aumenta en el embarazo?",
 o:["hCG","Insulina","Adrenalina","Melanina"],
 a:0,
 power:"progesterone"
@@ -111,20 +135,20 @@ power:"progesterone"
 
 {
 q:"¿Qué ocurre en la menstruación?",
-o:["El útero elimina tejido","Crece el cabello","Se rompen huesos","Aumenta el corazón"],
+o:["El útero elimina tejido","Crece cabello","Se rompen huesos","Aumenta corazón"],
 a:0,
 power:"estrogen"
 },
 
 {
-q:"¿Qué dura cerca de 28 días?",
+q:"¿Qué dura 28 días?",
 o:["Ciclo menstrual","Digestión","Respiración","Sueño"],
 a:0,
 power:"estrogen"
 },
 
 {
-q:"¿Qué hormona ayuda al crecimiento folicular?",
+q:"¿Qué hormona ayuda al folículo?",
 o:["FSH","LH","Insulina","Testosterona"],
 a:0,
 power:"lh"
@@ -159,7 +183,7 @@ power:"estrogen"
 },
 
 {
-q:"¿Dónde ocurre normalmente la ovulación?",
+q:"¿Dónde ocurre la ovulación?",
 o:["Ovario","Útero","Corazón","Estómago"],
 a:0,
 power:"estrogen"
@@ -180,8 +204,8 @@ power:"progesterone"
 },
 
 {
-q:"¿Qué hormona regula el ciclo menstrual?",
-o:["Estrógeno","Saliva","Bilis","Melanina"],
+q:"¿Qué regula el ciclo menstrual?",
+o:["Estrógeno","Bilis","Melanina","Saliva"],
 a:0,
 power:"estrogen"
 },
@@ -194,15 +218,15 @@ power:"estrogen"
 },
 
 {
-q:"¿Qué hormona ayuda a liberar el óvulo?",
+q:"¿Qué hormona libera el óvulo?",
 o:["LH","FSH","Insulina","Serotonina"],
 a:0,
 power:"lh"
 },
 
 {
-q:"¿Qué órgano produce espermatozoides?",
-o:["Testículos","Corazón","Pulmón","Riñón"],
+q:"¿Qué produce espermatozoides?",
+o:["Testículos","Pulmón","Riñón","Corazón"],
 a:0,
 power:"lh"
 },
@@ -215,14 +239,14 @@ power:"progesterone"
 },
 
 {
-q:"¿Qué hormona domina la fase folicular?",
+q:"¿Qué domina la fase folicular?",
 o:["Estrógeno","Progesterona","Insulina","Cortisol"],
 a:0,
 power:"estrogen"
 },
 
 {
-q:"¿Qué estructura conecta ovario y útero?",
+q:"¿Qué conecta ovario y útero?",
 o:["Trompas","Bronquios","Venas","Nervios"],
 a:0,
 power:"progesterone"
@@ -236,35 +260,35 @@ power:"estrogen"
 },
 
 {
-q:"¿Qué hormona mantiene el embarazo?",
+q:"¿Qué mantiene el embarazo?",
 o:["Progesterona","Insulina","Adrenalina","Dopamina"],
 a:0,
 power:"progesterone"
 },
 
 {
-q:"¿Qué célula masculina nada hacia el óvulo?",
+q:"¿Qué célula nada hacia el óvulo?",
 o:["Esperma","Glóbulo rojo","Neurona","Plaqueta"],
 a:0,
 power:"lh"
 },
 
 {
-q:"¿Qué órgano pertenece al sistema reproductor femenino?",
+q:"¿Qué órgano es femenino?",
 o:["Ovario","Pulmón","Riñón","Corazón"],
 a:0,
 power:"estrogen"
 },
 
 {
-q:"¿Qué hormona aumenta durante la ovulación?",
+q:"¿Qué aumenta durante la ovulación?",
 o:["LH","Cortisol","Melatonina","Insulina"],
 a:0,
 power:"lh"
 },
 
 {
-q:"¿Qué hormona engrosa el endometrio?",
+q:"¿Qué engrosa el endometrio?",
 o:["Progesterona","Adrenalina","Insulina","Testosterona"],
 a:0,
 power:"progesterone"
@@ -304,9 +328,9 @@ const player = {
 x: offsetX + TILE*1.5,
 y: offsetY + TILE*1.5,
 
-radius:14,
+radius:13,
 
-speed:3.8,
+speed:2.5,
 
 direction:0
 
@@ -332,12 +356,9 @@ y: offsetY + TILE*10,
 
 color: colors[i],
 
-speed:1.8 + Math.random()*0.4,
+speed:1.2,
 
-angle:0,
-
-dirX:0,
-dirY:0
+angle:0
 
 });
 
@@ -407,6 +428,8 @@ return false;
 
 function movePlayer(){
 
+if(gamePaused) return;
+
 let dx = 0;
 let dy = 0;
 
@@ -463,7 +486,7 @@ const visited = {};
 
 const parent = {};
 
-visited[start.row + "," + start.col] = true;
+visited[start.row+","+start.col] = true;
 
 const dirs = [
 
@@ -495,12 +518,12 @@ const nc = current.col + d[1];
 if(
 map[nr] &&
 map[nr][nc] !== "1" &&
-!visited[nr + "," + nc]
+!visited[nr+","+nc]
 ){
 
-visited[nr + "," + nc] = true;
+visited[nr+","+nc] = true;
 
-parent[nr + "," + nc] = current;
+parent[nr+","+nc] = current;
 
 queue.push({
 
@@ -517,9 +540,9 @@ col:nc
 
 let step = target;
 
-while(parent[step.row + "," + step.col]){
+while(parent[step.row+","+step.col]){
 
-const prev = parent[step.row + "," + step.col];
+const prev = parent[step.row+","+step.col];
 
 if(
 prev.row === start.row &&
@@ -539,6 +562,8 @@ return start;
 }
 
 function moveEnemies(){
+
+if(gamePaused) return;
 
 const playerGrid = gridPos(player.x,player.y);
 
@@ -586,9 +611,9 @@ ctx.translate(player.x,player.y);
 
 ctx.rotate(player.direction);
 
-mouth += 0.15;
+mouth += 0.18;
 
-const open = Math.abs(Math.sin(mouth))*0.25;
+const open = Math.abs(Math.sin(mouth))*0.22;
 
 ctx.fillStyle = "yellow";
 
@@ -622,19 +647,19 @@ ctx.fillStyle = enemy.color;
 
 ctx.beginPath();
 
-ctx.ellipse(0,0,7,5,0,0,Math.PI*2);
+ctx.ellipse(0,0,6,4,0,0,Math.PI*2);
 
 ctx.fill();
 
 ctx.beginPath();
 
-ctx.moveTo(-8,0);
+ctx.moveTo(-6,0);
 
-for(let i=0;i<12;i++){
+for(let i=0;i<10;i++){
 
 ctx.lineTo(
--8-i*3,
-Math.sin(Date.now()/90+i)*3
+-6-i*3,
+Math.sin(Date.now()/100+i)*2.5
 );
 
 }
@@ -655,7 +680,7 @@ ctx.strokeStyle = "#4d7cff";
 
 ctx.lineWidth = 4;
 
-ctx.shadowBlur = 15;
+ctx.shadowBlur = 10;
 
 ctx.shadowColor = "#4d7cff";
 
@@ -716,7 +741,7 @@ const dy = player.y - p.y;
 
 const dist = Math.sqrt(dx*dx + dy*dy);
 
-if(dist < 18){
+if(dist < 16){
 
 pellets.splice(index,1);
 
@@ -750,7 +775,7 @@ createPellets();
 
 enemies.forEach(enemy=>{
 
-enemy.speed += 0.15;
+enemy.speed += 0.08;
 
 });
 
@@ -759,6 +784,8 @@ enemy.speed += 0.15;
 }
 
 function showQuestion(){
+
+gamePaused = true;
 
 const q = questions[
 Math.floor(Math.random()*questions.length)
@@ -804,6 +831,8 @@ lives--;
 
 questionBox.style.display = "none";
 
+gamePaused = false;
+
 };
 
 });
@@ -824,7 +853,7 @@ setTimeout(()=>{
 
 estrogenMode = false;
 
-},8000);
+},powers.estrogen.time);
 
 }
 
@@ -838,7 +867,7 @@ setTimeout(()=>{
 
 progesteroneMode = false;
 
-},8000);
+},powers.progesterone.time);
 
 }
 
@@ -852,7 +881,7 @@ setTimeout(()=>{
 
 lhMode = false;
 
-},8000);
+},powers.lh.time);
 
 }
 
@@ -867,7 +896,7 @@ const dy = player.y - enemy.y;
 
 const dist = Math.sqrt(dx*dx + dy*dy);
 
-if(dist < 18){
+if(dist < 16){
 
 if(lhMode){
 
@@ -901,6 +930,10 @@ location.reload();
 
 function drawHUD(){
 
+ctx.fillStyle = "black";
+
+ctx.fillRect(0,0,canvas.width,140);
+
 ctx.fillStyle = "white";
 
 ctx.font = "20px Arial";
@@ -911,39 +944,45 @@ ctx.fillText("⭐ Puntos: " + score,240,35);
 
 ctx.fillText("🟣 Pastillas: " + pelletsEaten + "/10",480,35);
 
-ctx.fillText("🧬 Estrógeno",760,28);
+ctx.fillText("⚡ PODERES HPO",760,30);
 
-ctx.strokeRect(760,38,120,12);
+ctx.fillText("Estrógeno = x2 puntos",40,75);
+ctx.fillText("Progesterona = espermas lentos",320,75);
+ctx.fillText("LH Surge = comer espermas",720,75);
 
-ctx.fillRect(760,38,estrogenBar,12);
+ctx.strokeStyle = "white";
 
-ctx.fillText("🛡 Progesterona",760,68);
+ctx.strokeRect(40,95,200,16);
+ctx.strokeRect(320,95,200,16);
+ctx.strokeRect(720,95,200,16);
 
-ctx.strokeRect(760,78,120,12);
+ctx.fillStyle = "#ff4fd8";
+ctx.fillRect(40,95,estrogenBar*2,16);
 
-ctx.fillRect(760,78,progesteroneBar,12);
+ctx.fillStyle = "#7d7dff";
+ctx.fillRect(320,95,progesteroneBar*2,16);
 
-ctx.fillText("⚡ LH",760,108);
-
-ctx.strokeRect(760,118,120,12);
-
-ctx.fillRect(760,118,lhBar,12);
+ctx.fillStyle = "#ffe14d";
+ctx.fillRect(720,95,lhBar*2,16);
 
 if(estrogenMode){
 
-ctx.fillText("ESTRÓGENO ACTIVO",920,50);
+ctx.fillStyle = "#ff4fd8";
+ctx.fillText("ACTIVO",110,128);
 
 }
 
 if(progesteroneMode){
 
-ctx.fillText("PROGESTERONA ACTIVA",920,80);
+ctx.fillStyle = "#7d7dff";
+ctx.fillText("ACTIVO",395,128);
 
 }
 
 if(lhMode){
 
-ctx.fillText("LH SURGE ACTIVO",920,110);
+ctx.fillStyle = "#ffe14d";
+ctx.fillText("ACTIVO",800,128);
 
 }
 
@@ -961,6 +1000,8 @@ eatPellets();
 
 checkEnemyCollision();
 
+drawHUD();
+
 drawWalls();
 
 drawPellets();
@@ -968,8 +1009,6 @@ drawPellets();
 drawPlayer();
 
 enemies.forEach(drawEnemy);
-
-drawHUD();
 
 }
 
