@@ -1,13 +1,13 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-canvas.width = 1100;
-canvas.height = 920;
+canvas.width = 1000;
+canvas.height = 900;
 
 const TILE = 28;
 
-const offsetX = 120;
-const offsetY = 250;
+const offsetX = 70;
+const offsetY = 220;
 
 const questionBox = document.getElementById("questionBox");
 const questionText = document.getElementById("questionText");
@@ -47,11 +47,10 @@ let pellets = [];
 
 let score = 0;
 let lives = 3;
+
 let pelletsEaten = 0;
 
 let gamePaused = false;
-
-let usedQuestions = [];
 
 let estrogenBar = 0;
 let progesteroneBar = 0;
@@ -61,48 +60,241 @@ let estrogenMode = false;
 let progesteroneMode = false;
 let lhMode = false;
 
+let usedQuestions = [];
+
+const powers = {
+
+estrogen:{
+name:"Estrógeno",
+effect:"Duplica puntos",
+time:8000
+},
+
+progesterone:{
+name:"Progesterona",
+effect:"Espermas lentos",
+time:8000
+},
+
+lh:{
+name:"LH Surge",
+effect:"Comer espermas",
+time:8000
+}
+
+};
+
 const questions = [
 
-{q:"What hormone triggers ovulation?",o:["LH","Insulin","Melatonin","FSH"],a:0,p:"lh"},
-{q:"Which organ produces estrogen?",o:["Ovario","Riñón","Pulmón","Hígado"],a:0,p:"estrogen"},
-{q:"¿Qué hormona mantiene el embarazo?",o:["Progesterona","Insulina","Cortisol","Dopamina"],a:0,p:"progesterone"},
-{q:"¿Dónde ocurre la fecundación?",o:["Trompas","Pulmón","Corazón","Cerebro"],a:0,p:"lh"},
-{q:"¿Qué hormona prepara el útero?",o:["Progesterona","FSH","Melatonina","Serotonina"],a:0,p:"progesterone"},
-{q:"¿Qué hormona ayuda al folículo?",o:["FSH","LH","Insulina","Adrenalina"],a:0,p:"estrogen"},
-{q:"¿Qué estructura libera el óvulo?",o:["Folículo","Pulmón","Riñón","Hueso"],a:0,p:"lh"},
-{q:"¿Qué dura 28 días?",o:["Ciclo menstrual","Digestión","Sueño","Mitosis"],a:0,p:"estrogen"},
-{q:"¿Qué hormona aumenta antes de ovular?",o:["LH","Cortisol","Melatonina","Insulina"],a:0,p:"lh"},
-{q:"¿Qué órgano alberga el bebé?",o:["Útero","Pulmón","Riñón","Páncreas"],a:0,p:"progesterone"},
+{
+q:"¿Qué hormona provoca la ovulación?",
+o:["LH","Insulina","Adrenalina","Melatonina"],
+a:0,
+power:"lh"
+},
 
-{q:"¿Qué célula fecunda el óvulo?",o:["Esperma","Neurona","Plaqueta","Glóbulo"],a:0,p:"lh"},
-{q:"¿Qué regula el ciclo menstrual?",o:["Estrógeno","Saliva","Bilis","Glucosa"],a:0,p:"estrogen"},
-{q:"¿Qué órgano libera el óvulo?",o:["Ovario","Hígado","Pulmón","Corazón"],a:0,p:"estrogen"},
-{q:"¿Qué hormona disminuye antes de menstruar?",o:["Progesterona","Insulina","FSH","LH"],a:0,p:"progesterone"},
-{q:"¿Qué ocurre en la menstruación?",o:["El útero elimina tejido","Crece cabello","Aumenta hueso","Sube glucosa"],a:0,p:"progesterone"},
-{q:"¿Cuál es el gameto femenino?",o:["Óvulo","Esperma","Neurona","Plaqueta"],a:0,p:"estrogen"},
-{q:"¿Qué órgano produce espermatozoides?",o:["Testículos","Pulmón","Riñón","Corazón"],a:0,p:"lh"},
-{q:"¿Qué conecta ovario y útero?",o:["Trompas","Bronquios","Venas","Nervios"],a:0,p:"progesterone"},
-{q:"¿Qué hormona engrosa el endometrio?",o:["Progesterona","Melatonina","Insulina","Testosterona"],a:0,p:"progesterone"},
-{q:"¿Qué ocurre en la ovulación?",o:["Se libera un óvulo","Se rompe hueso","Se duerme","Sube azúcar"],a:0,p:"lh"},
+{
+q:"¿Qué órgano libera el óvulo?",
+o:["Ovario","Pulmón","Riñón","Corazón"],
+a:0,
+power:"estrogen"
+},
 
-{q:"¿Qué hormona domina la fase folicular?",o:["Estrógeno","Progesterona","Insulina","Adrenalina"],a:0,p:"estrogen"},
-{q:"¿Qué órgano femenino produce hormonas?",o:["Ovario","Pulmón","Páncreas","Riñón"],a:0,p:"estrogen"},
-{q:"¿Qué hormona ayuda a comer espermas?",o:["LH","Insulina","Cortisol","FSH"],a:0,p:"lh"},
-{q:"¿Qué fase sigue a la ovulación?",o:["Lútea","Digestiva","Respiratoria","Ósea"],a:0,p:"progesterone"},
-{q:"¿Qué hormona aumenta en embarazo?",o:["hCG","Melatonina","Insulina","Dopamina"],a:0,p:"progesterone"},
-{q:"¿Qué célula nada hacia el óvulo?",o:["Esperma","Neurona","Plaqueta","Glóbulo"],a:0,p:"lh"},
-{q:"¿Qué hormona ayuda a formar el endometrio?",o:["Estrógeno","Cortisol","Insulina","FSH"],a:0,p:"estrogen"},
-{q:"¿Qué estructura recibe el embrión?",o:["Útero","Pulmón","Hígado","Corazón"],a:0,p:"progesterone"},
-{q:"¿Qué hormona desencadena ovulación?",o:["LH","FSH","Insulina","Serotonina"],a:0,p:"lh"},
-{q:"¿Qué hormona domina embarazo?",o:["Progesterona","Insulina","Melatonina","Glucosa"],a:0,p:"progesterone"},
+{
+q:"¿Dónde ocurre la fecundación?",
+o:["Pulmón","Corazón","Trompas","Hígado"],
+a:2,
+power:"progesterone"
+},
 
-{q:"¿Qué hormona se relaciona con ovarios?",o:["Estrógeno","Insulina","Cortisol","Adrenalina"],a:0,p:"estrogen"},
-{q:"¿Qué gameto es masculino?",o:["Esperma","Óvulo","Plaqueta","Neurona"],a:0,p:"lh"},
-{q:"¿Qué hormona ayuda al crecimiento del folículo?",o:["FSH","Insulina","Melatonina","Adrenalina"],a:0,p:"estrogen"},
-{q:"¿Qué hormona prepara el cuerpo para embarazo?",o:["Progesterona","LH","Insulina","Cortisol"],a:0,p:"progesterone"},
-{q:"¿Qué órgano contiene el endometrio?",o:["Útero","Riñón","Pulmón","Hígado"],a:0,p:"progesterone"},
-{q:"¿Qué hormona aumenta en ovulación?",o:["LH","Dopamina","Cortisol","Melatonina"],a:0,p:"lh"},
-{q:"¿Qué hormona ayuda a duplicar puntos?",o:["Estrógeno","Insulina","FSH","Glucosa"],a:0,p:"estrogen"}
+{
+q:"¿Qué hormona aumenta en el embarazo?",
+o:["hCG","Insulina","Adrenalina","Melanina"],
+a:0,
+power:"progesterone"
+},
+
+{
+q:"¿Qué órgano produce estrógeno?",
+o:["Pulmón","Ovario","Riñón","Páncreas"],
+a:1,
+power:"estrogen"
+},
+
+{
+q:"¿Cuál es el gameto masculino?",
+o:["Esperma","Óvulo","Plaqueta","Neurona"],
+a:0,
+power:"lh"
+},
+
+{
+q:"¿Qué hormona prepara el útero?",
+o:["Progesterona","Insulina","Cortisol","Adrenalina"],
+a:0,
+power:"progesterone"
+},
+
+{
+q:"¿Qué ocurre en la menstruación?",
+o:["El útero elimina tejido","Crece cabello","Se rompen huesos","Aumenta corazón"],
+a:0,
+power:"estrogen"
+},
+
+{
+q:"¿Qué dura 28 días?",
+o:["Ciclo menstrual","Digestión","Respiración","Sueño"],
+a:0,
+power:"estrogen"
+},
+
+{
+q:"¿Qué hormona ayuda al folículo?",
+o:["FSH","LH","Insulina","Testosterona"],
+a:0,
+power:"lh"
+},
+
+{
+q:"¿Dónde se implanta el embrión?",
+o:["Útero","Pulmón","Corazón","Riñón"],
+a:0,
+power:"progesterone"
+},
+
+{
+q:"¿Qué célula fecunda el óvulo?",
+o:["Esperma","Neurona","Plaqueta","Hueso"],
+a:0,
+power:"lh"
+},
+
+{
+q:"¿Qué hormona aumenta antes de ovular?",
+o:["LH","Serotonina","Melatonina","Insulina"],
+a:0,
+power:"lh"
+},
+
+{
+q:"¿Qué estructura libera el óvulo?",
+o:["Folículo","Pulmón","Hígado","Riñón"],
+a:0,
+power:"estrogen"
+},
+
+{
+q:"¿Dónde ocurre la ovulación?",
+o:["Ovario","Útero","Corazón","Estómago"],
+a:0,
+power:"estrogen"
+},
+
+{
+q:"¿Qué órgano alberga el bebé?",
+o:["Útero","Pulmón","Cerebro","Hígado"],
+a:0,
+power:"progesterone"
+},
+
+{
+q:"¿Qué hormona disminuye antes de menstruar?",
+o:["Progesterona","Adrenalina","Melatonina","Insulina"],
+a:0,
+power:"progesterone"
+},
+
+{
+q:"¿Qué regula el ciclo menstrual?",
+o:["Estrógeno","Bilis","Melanina","Saliva"],
+a:0,
+power:"estrogen"
+},
+
+{
+q:"¿Cuál es el gameto femenino?",
+o:["Óvulo","Esperma","Plaqueta","Neurona"],
+a:0,
+power:"estrogen"
+},
+
+{
+q:"¿Qué hormona libera el óvulo?",
+o:["LH","FSH","Insulina","Serotonina"],
+a:0,
+power:"lh"
+},
+
+{
+q:"¿Qué produce espermatozoides?",
+o:["Testículos","Pulmón","Riñón","Corazón"],
+a:0,
+power:"lh"
+},
+
+{
+q:"¿Qué fase sigue a la ovulación?",
+o:["Fase lútea","Digestión","Respiración","Mitosis"],
+a:0,
+power:"progesterone"
+},
+
+{
+q:"¿Qué domina la fase folicular?",
+o:["Estrógeno","Progesterona","Insulina","Cortisol"],
+a:0,
+power:"estrogen"
+},
+
+{
+q:"¿Qué conecta ovario y útero?",
+o:["Trompas","Bronquios","Venas","Nervios"],
+a:0,
+power:"progesterone"
+},
+
+{
+q:"¿Qué libera el ovario?",
+o:["Óvulo","Plaquetas","Neuronas","Cabello"],
+a:0,
+power:"estrogen"
+},
+
+{
+q:"¿Qué mantiene el embarazo?",
+o:["Progesterona","Insulina","Adrenalina","Dopamina"],
+a:0,
+power:"progesterone"
+},
+
+{
+q:"¿Qué célula nada hacia el óvulo?",
+o:["Esperma","Glóbulo rojo","Neurona","Plaqueta"],
+a:0,
+power:"lh"
+},
+
+{
+q:"¿Qué órgano es femenino?",
+o:["Ovario","Pulmón","Riñón","Corazón"],
+a:0,
+power:"estrogen"
+},
+
+{
+q:"¿Qué aumenta durante la ovulación?",
+o:["LH","Cortisol","Melatonina","Insulina"],
+a:0,
+power:"lh"
+},
+
+{
+q:"¿Qué engrosa el endometrio?",
+o:["Progesterona","Adrenalina","Insulina","Testosterona"],
+a:0,
+power:"progesterone"
+}
 
 ];
 
@@ -140,48 +332,83 @@ y: offsetY + TILE*1.5,
 
 radius:13,
 
-speed:1.7,
+speed:1.9,
 
 direction:0
 
 };
 
-const enemySpawn = [
+const enemies = [
 
-{x:470,y:540},
-{x:510,y:540},
-{x:550,y:540},
-{x:590,y:540},
-{x:630,y:540},
-{x:670,y:540}
-
-];
-
-const enemyColors = [
-"red",
-"cyan",
-"lime",
-"orange",
-"pink",
-"purple"
-];
-
-const enemies = [];
-
-for(let i=0;i<6;i++){
-
-enemies.push({
-
-x:enemySpawn[i].x,
-y:enemySpawn[i].y,
-
-color:enemyColors[i],
-
-speed:0.85,
-
+{
+x:450,
+y:500,
+color:"red",
+speed:0.9,
 angle:0
+},
 
-});
+{
+x:490,
+y:500,
+color:"cyan",
+speed:0.9,
+angle:0
+},
+
+{
+x:530,
+y:500,
+color:"lime",
+speed:0.9,
+angle:0
+},
+
+{
+x:570,
+y:500,
+color:"orange",
+speed:0.9,
+angle:0
+},
+
+{
+x:610,
+y:500,
+color:"pink",
+speed:0.9,
+angle:0
+},
+
+{
+x:650,
+y:500,
+color:"purple",
+speed:0.9,
+angle:0
+}
+
+];
+
+function gridPos(x,y){
+
+return {
+
+col: Math.floor((x-offsetX)/TILE),
+row: Math.floor((y-offsetY)/TILE)
+
+};
+
+}
+
+function worldPos(col,row){
+
+return {
+
+x: offsetX + col*TILE + TILE/2,
+y: offsetY + row*TILE + TILE/2
+
+};
 
 }
 
@@ -190,45 +417,6 @@ const keys = {};
 window.addEventListener("keydown",(e)=>{
 
 keys[e.key] = true;
-
-if(e.key === "1" && estrogenBar >= 100){
-
-estrogenBar = 0;
-estrogenMode = true;
-
-setTimeout(()=>{
-
-estrogenMode = false;
-
-},8000);
-
-}
-
-if(e.key === "2" && progesteroneBar >= 100){
-
-progesteroneBar = 0;
-progesteroneMode = true;
-
-setTimeout(()=>{
-
-progesteroneMode = false;
-
-},8000);
-
-}
-
-if(e.key === "3" && lhBar >= 100){
-
-lhBar = 0;
-lhMode = true;
-
-setTimeout(()=>{
-
-lhMode = false;
-
-},8000);
-
-}
 
 });
 
@@ -299,39 +487,20 @@ player.direction = 0;
 
 }
 
-if(!wallCollision(player.x+dx,player.y,player.radius)){
+const nextX = player.x + dx;
+const nextY = player.y + dy;
 
-player.x += dx;
+if(!wallCollision(nextX,player.y,player.radius)){
 
-}
-
-if(!wallCollision(player.x,player.y+dy,player.radius)){
-
-player.y += dy;
+player.x = nextX;
 
 }
 
-}
+if(!wallCollision(player.x,nextY,player.radius)){
 
-function gridPos(x,y){
-
-return {
-
-col: Math.floor((x-offsetX)/TILE),
-row: Math.floor((y-offsetY)/TILE)
-
-};
+player.y = nextY;
 
 }
-
-function worldPos(col,row){
-
-return {
-
-x: offsetX + col*TILE + TILE/2,
-y: offsetY + row*TILE + TILE/2
-
-};
 
 }
 
@@ -340,6 +509,7 @@ function bfs(start,target){
 const queue = [start];
 
 const visited = {};
+
 const parent = {};
 
 visited[start.row+","+start.col] = true;
@@ -440,7 +610,7 @@ let speed = enemy.speed;
 
 if(progesteroneMode){
 
-speed *= 0.45;
+speed *= 0.5;
 
 }
 
@@ -452,6 +622,143 @@ enemy.x += (dx/dist)*speed;
 enemy.y += (dy/dist)*speed;
 
 }
+
+});
+
+}
+
+let mouth = 0;
+
+function drawPlayer(){
+
+ctx.save();
+
+ctx.translate(player.x,player.y);
+
+ctx.rotate(player.direction);
+
+mouth += 0.12;
+
+const open = Math.abs(Math.sin(mouth))*0.18;
+
+ctx.fillStyle = "yellow";
+
+ctx.shadowBlur = 15;
+ctx.shadowColor = "yellow";
+
+ctx.beginPath();
+
+ctx.arc(
+0,
+0,
+player.radius,
+open*Math.PI,
+(2-open)*Math.PI
+);
+
+ctx.lineTo(0,0);
+
+ctx.fill();
+
+ctx.restore();
+
+}
+
+function drawEnemy(enemy){
+
+ctx.save();
+
+ctx.translate(enemy.x,enemy.y);
+
+ctx.rotate(enemy.angle);
+
+ctx.fillStyle = enemy.color;
+
+ctx.shadowBlur = 12;
+ctx.shadowColor = enemy.color;
+
+ctx.beginPath();
+
+ctx.rect(-5,-4,10,8);
+
+ctx.fill();
+
+ctx.beginPath();
+
+ctx.moveTo(-6,0);
+
+for(let i=0;i<8;i++){
+
+ctx.lineTo(
+-6-i*3,
+Math.sin(Date.now()/120+i)*2
+);
+
+}
+
+ctx.strokeStyle = enemy.color;
+
+ctx.lineWidth = 2;
+
+ctx.stroke();
+
+ctx.restore();
+
+}
+
+function drawWalls(){
+
+ctx.strokeStyle = "#00aeff";
+
+ctx.lineWidth = 4;
+
+ctx.shadowBlur = 15;
+
+ctx.shadowColor = "#00aeff";
+
+for(let row=0; row<map.length; row++){
+
+for(let col=0; col<map[row].length; col++){
+
+if(map[row][col] === "1"){
+
+const x = offsetX + col*TILE;
+const y = offsetY + row*TILE;
+
+ctx.strokeRect(
+x+2,
+y+2,
+TILE-4,
+TILE-4
+);
+
+}
+
+}
+
+}
+
+ctx.shadowBlur = 0;
+
+}
+
+function drawPellets(){
+
+ctx.fillStyle = "#ff66ff";
+
+pellets.forEach(p=>{
+
+ctx.beginPath();
+
+ctx.arc(
+p.x,
+p.y,
+3,
+0,
+Math.PI*2
+);
+
+ctx.fill();
 
 });
 
@@ -534,11 +841,27 @@ btn.onclick = ()=>{
 
 if(index === q.a){
 
-score += 150;
+score += 100;
 
-if(q.p === "estrogen") estrogenBar += 25;
-if(q.p === "progesterone") progesteroneBar += 25;
-if(q.p === "lh") lhBar += 25;
+if(q.power === "estrogen"){
+
+estrogenBar += 25;
+
+}
+
+if(q.power === "progesterone"){
+
+progesteroneBar += 25;
+
+}
+
+if(q.power === "lh"){
+
+lhBar += 25;
+
+}
+
+activatePowers();
 
 }else{
 
@@ -558,6 +881,52 @@ questionBox.style.display = "block";
 
 }
 
+function activatePowers(){
+
+if(estrogenBar >= 100){
+
+estrogenBar = 0;
+
+estrogenMode = true;
+
+setTimeout(()=>{
+
+estrogenMode = false;
+
+},8000);
+
+}
+
+if(progesteroneBar >= 100){
+
+progesteroneBar = 0;
+
+progesteroneMode = true;
+
+setTimeout(()=>{
+
+progesteroneMode = false;
+
+},8000);
+
+}
+
+if(lhBar >= 100){
+
+lhBar = 0;
+
+lhMode = true;
+
+setTimeout(()=>{
+
+lhMode = false;
+
+},8000);
+
+}
+
+}
+
 function checkEnemyCollision(){
 
 enemies.forEach(enemy=>{
@@ -567,12 +936,12 @@ const dy = player.y - enemy.y;
 
 const dist = Math.sqrt(dx*dx + dy*dy);
 
-if(dist < 15){
+if(dist < 16){
 
 if(lhMode){
 
-enemy.x = 560;
-enemy.y = 540;
+enemy.x = 540;
+enemy.y = 500;
 
 score += 250;
 
@@ -599,137 +968,71 @@ location.reload();
 
 }
 
-let mouth = 0;
+function drawHUD(){
 
-function drawPlayer(){
+ctx.fillStyle = "black";
 
-ctx.save();
+ctx.fillRect(0,0,canvas.width,170);
 
-ctx.translate(player.x,player.y);
+ctx.fillStyle = "#00ffcc";
 
-ctx.rotate(player.direction);
+ctx.font = "18px Courier New";
 
-mouth += 0.12;
+ctx.fillText("VIDAS: " + lives,40,40);
 
-const open = Math.abs(Math.sin(mouth))*0.18;
+ctx.fillText("PUNTOS: " + score,240,40);
 
-ctx.fillStyle = "yellow";
-
-ctx.shadowBlur = 20;
-ctx.shadowColor = "yellow";
-
-ctx.beginPath();
-
-ctx.arc(
-0,
-0,
-player.radius,
-open*Math.PI,
-(2-open)*Math.PI
-);
-
-ctx.lineTo(0,0);
-
-ctx.fill();
-
-ctx.restore();
-
-}
-
-function drawEnemy(enemy){
-
-ctx.save();
-
-ctx.translate(enemy.x,enemy.y);
-
-ctx.rotate(enemy.angle);
-
-ctx.fillStyle = enemy.color;
-
-ctx.shadowBlur = 18;
-ctx.shadowColor = enemy.color;
-
-ctx.beginPath();
-
-ctx.rect(-5,-4,10,8);
-
-ctx.fill();
-
-ctx.beginPath();
-
-ctx.moveTo(-6,0);
-
-for(let i=0;i<8;i++){
-
-ctx.lineTo(
--6-i*3,
-Math.sin(Date.now()/120+i)*2
-);
-
-}
-
-ctx.strokeStyle = enemy.color;
-ctx.lineWidth = 2;
-ctx.stroke();
-
-ctx.restore();
-
-}
-
-function drawWalls(){
-
-ctx.strokeStyle = "#00aaff";
-
-ctx.lineWidth = 4;
-
-ctx.shadowBlur = 20;
-ctx.shadowColor = "#00aaff";
-
-for(let row=0; row<map.length; row++){
-
-for(let col=0; col<map[row].length; col++){
-
-if(map[row][col] === "1"){
-
-const x = offsetX + col*TILE;
-const y = offsetY + row*TILE;
-
-ctx.strokeRect(
-x+2,
-y+2,
-TILE-4,
-TILE-4
-);
-
-}
-
-}
-
-}
-
-ctx.shadowBlur = 0;
-
-}
-
-function drawPellets(){
+ctx.fillText("PASTILLAS: " + pelletsEaten + "/15",500,40);
 
 ctx.fillStyle = "#ff66ff";
+ctx.fillText("ESTROGENO",40,90);
 
-pellets.forEach(p=>{
+ctx.fillStyle = "#66a3ff";
+ctx.fillText("PROGESTERONA",350,90);
 
-ctx.beginPath();
+ctx.fillStyle = "#ffff66";
+ctx.fillText("LH SURGE",730,90);
 
-ctx.arc(
-p.x,
-p.y,
-3,
-0,
-Math.PI*2
-);
+ctx.strokeStyle = "white";
 
-ctx.fill();
+ctx.strokeRect(40,110,200,18);
+ctx.strokeRect(350,110,200,18);
+ctx.strokeRect(730,110,200,18);
 
-});
+ctx.fillStyle = "#ff66ff";
+ctx.fillRect(40,110,estrogenBar*2,18);
+
+ctx.fillStyle = "#66a3ff";
+ctx.fillRect(350,110,progesteroneBar*2,18);
+
+ctx.fillStyle = "#ffff66";
+ctx.fillRect(730,110,lhBar*2,18);
+
+ctx.fillStyle = "white";
+
+ctx.font = "15px Courier New";
+
+ctx.fillText("x2 puntos",40,150);
+ctx.fillText("Espermas lentos",350,150);
+ctx.fillText("Comer espermas",730,150);
+
+if(estrogenMode){
+
+ctx.fillText("ACTIVO",120,150);
+
+}
+
+if(progesteroneMode){
+
+ctx.fillText("ACTIVO",470,150);
+
+}
+
+if(lhMode){
+
+ctx.fillText("ACTIVO",840,150);
+
+}
 
 }
 
@@ -747,27 +1050,36 @@ ctx.fillRect(0,i,canvas.width,1);
 
 }
 
-function drawHUD(){
+function gameLoop(){
 
-ctx.fillStyle = "#00ffee";
+drawRetroBackground();
 
-ctx.font = "18px Courier New";
+movePlayer();
 
-ctx.fillText("VIDAS: " + lives,40,40);
+moveEnemies();
 
-ctx.fillText("PUNTOS: " + score,250,40);
+eatPellets();
 
-ctx.fillText("PASTILLAS: " + pelletsEaten + "/15",500,40);
+checkEnemyCollision();
 
-ctx.fillStyle = "#ffffff";
-ctx.fillText("1 = ESTROGENO",40,90);
+drawHUD();
 
-ctx.fillText("2 = PROGESTERONA",380,90);
+drawWalls();
 
-ctx.fillText("3 = LH SURGE",760,90);
+drawPellets();
 
-ctx.strokeStyle = "white";
+drawPlayer();
 
-ctx.strokeRect(40,110,220,18);
-ctx.strokeRect(380,110,220,18);
-ctx.strokeRect(760,110,
+enemies.forEach(drawEnemy);
+
+}
+
+function animate(){
+
+gameLoop();
+
+requestAnimationFrame(animate);
+
+}
+
+animate();
