@@ -92,10 +92,8 @@ const questions = [
 {q:"¿Qué estructura recibe el embrión?",o:["Útero","Pulmón","Hígado","Corazón"],a:0,p:"progesterone"},
 {q:"¿Qué hormona desencadena ovulación?",o:["LH","FSH","Insulina","Serotonina"],a:0,p:"lh"},
 {q:"¿Qué hormona domina embarazo?",o:["Progesterona","Insulina","Melatonina","Glucosa"],a:0,p:"progesterone"},
-{q:"¿Qué hormona se relaciona con ovarios?",o:["Estrógeno","Insulina","Cortisol","Adrenalina"],a:0,p:"estrogen"},
 {q:"¿Qué gameto es masculino?",o:["Esperma","Óvulo","Plaqueta","Neurona"],a:0,p:"lh"},
 {q:"¿Qué hormona ayuda al crecimiento del folículo?",o:["FSH","Insulina","Melatonina","Adrenalina"],a:0,p:"estrogen"},
-{q:"¿Qué hormona prepara el cuerpo para embarazo?",o:["Progesterona","LH","Insulina","Cortisol"],a:0,p:"progesterone"},
 {q:"¿Qué órgano contiene el endometrio?",o:["Útero","Riñón","Pulmón","Hígado"],a:0,p:"progesterone"},
 {q:"¿Qué hormona aumenta en ovulación?",o:["LH","Dopamina","Cortisol","Melatonina"],a:0,p:"lh"},
 {q:"¿Qué hormona ayuda a duplicar puntos?",o:["Estrógeno","Insulina","FSH","Glucosa"],a:0,p:"estrogen"}
@@ -133,25 +131,11 @@ const player = {
 
 x: offsetX + TILE*1.5,
 y: offsetY + TILE*1.5,
-
 radius:13,
-
-speed:1.7,
-
+speed:1.8,
 direction:0
 
 };
-
-const enemySpawn = [
-
-{x:470,y:540},
-{x:510,y:540},
-{x:550,y:540},
-{x:590,y:540},
-{x:630,y:540},
-{x:670,y:540}
-
-];
 
 const enemyColors = [
 "red",
@@ -168,13 +152,11 @@ for(let i=0;i<6;i++){
 
 enemies.push({
 
-x:enemySpawn[i].x,
-y:enemySpawn[i].y,
-
+x:520 + (i*25),
+y:540,
+radius:10,
+speed:0.8,
 color:enemyColors[i],
-
-speed:0.85,
-
 angle:0
 
 });
@@ -309,17 +291,360 @@ player.y += dy;
 
 }
 
-function drawRetroBackground(){
+function gridPos(x,y){
 
-ctx.fillStyle = "black";
-ctx.fillRect(0,0,canvas.width,canvas.height);
+return {
 
-for(let i=0;i<canvas.height;i+=4){
+col: Math.floor((x-offsetX)/TILE),
+row: Math.floor((y-offsetY)/TILE)
 
-ctx.fillStyle = "rgba(255,255,255,0.03)";
-ctx.fillRect(0,i,canvas.width,1);
+};
 
 }
+
+function worldPos(col,row){
+
+return {
+
+x: offsetX + col*TILE + TILE/2,
+y: offsetY + row*TILE + TILE/2
+
+};
+
+}
+
+function bfs(start,target){
+
+const queue = [start];
+
+const visited = {};
+const parent = {};
+
+visited[start.row+","+start.col] = true;
+
+const dirs = [
+
+[1,0],
+[-1,0],
+[0,1],
+[0,-1]
+
+];
+
+while(queue.length){
+
+const current = queue.shift();
+
+if(current.row === target.row && current.col === target.col){
+
+break;
+
+}
+
+for(const d of dirs){
+
+const nr = current.row + d[0];
+const nc = current.col + d[1];
+
+if(
+map[nr] &&
+map[nr][nc] !== "1" &&
+!visited[nr+","+nc]
+){
+
+visited[nr+","+nc] = true;
+
+parent[nr+","+nc] = current;
+
+queue.push({
+
+row:nr,
+col:nc
+
+});
+
+}
+
+}
+
+}
+
+let step = target;
+
+while(parent[step.row+","+step.col]){
+
+const prev = parent[step.row+","+step.col];
+
+if(prev.row === start.row && prev.col === start.col){
+
+return step;
+
+}
+
+step = prev;
+
+}
+
+return start;
+
+}
+
+function moveEnemies(){
+
+if(gamePaused) return;
+
+const playerGrid = gridPos(player.x,player.y);
+
+enemies.forEach(enemy=>{
+
+const enemyGrid = gridPos(enemy.x,enemy.y);
+
+const nextCell = bfs(enemyGrid,playerGrid);
+
+const target = worldPos(nextCell.col,nextCell.row);
+
+const dx = target.x - enemy.x;
+const dy = target.y - enemy.y;
+
+enemy.angle = Math.atan2(dy,dx);
+
+let speed = enemy.speed;
+
+if(progesteroneMode){
+
+speed *= 0.45;
+
+}
+
+const dist = Math.sqrt(dx*dx + dy*dy);
+
+if(dist > 1){
+
+enemy.x += (dx/dist)*speed;
+enemy.y += (dy/dist)*speed;
+
+}
+
+});
+
+}
+
+function eatPellets(){
+
+pellets.forEach((p,index)=>{
+
+const dx = player.x - p.x;
+const dy = player.y - p.y;
+
+const dist = Math.sqrt(dx*dx + dy*dy);
+
+if(dist < 16){
+
+pellets.splice(index,1);
+
+pelletsEaten++;
+
+let points = 10;
+
+if(estrogenMode){
+
+points *= 2;
+
+}
+
+score += points;
+
+if(pelletsEaten >= 15){
+
+pelletsEaten = 0;
+
+showQuestion();
+
+}
+
+}
+
+});
+
+if(pellets.length === 0){
+
+createPellets();
+
+}
+
+}
+
+function showQuestion(){
+
+gamePaused = true;
+
+if(usedQuestions.length >= questions.length){
+
+usedQuestions = [];
+
+}
+
+let random;
+
+do{
+
+random = Math.floor(Math.random()*questions.length);
+
+}while(usedQuestions.includes(random));
+
+usedQuestions.push(random);
+
+const q = questions[random];
+
+questionText.innerText = q.q;
+
+optionButtons.forEach((btn,index)=>{
+
+btn.innerText = q.o[index];
+
+btn.onclick = ()=>{
+
+if(index === q.a){
+
+score += 150;
+
+if(q.p === "estrogen") estrogenBar += 25;
+if(q.p === "progesterone") progesteroneBar += 25;
+if(q.p === "lh") lhBar += 25;
+
+}else{
+
+lives--;
+
+}
+
+questionBox.style.display = "none";
+
+gamePaused = false;
+
+};
+
+});
+
+questionBox.style.display = "block";
+
+}
+
+function checkEnemyCollision(){
+
+enemies.forEach(enemy=>{
+
+const dx = player.x - enemy.x;
+const dy = player.y - enemy.y;
+
+const dist = Math.sqrt(dx*dx + dy*dy);
+
+if(dist < 18){
+
+if(lhMode){
+
+enemy.x = 550;
+enemy.y = 540;
+
+score += 300;
+
+}else{
+
+lives--;
+
+player.x = offsetX + TILE*1.5;
+player.y = offsetY + TILE*1.5;
+
+}
+
+if(lives <= 0){
+
+alert("💀 GAME OVER\nPUNTAJE: " + score);
+
+location.reload();
+
+}
+
+}
+
+});
+
+}
+
+let mouth = 0;
+
+function drawPlayer(){
+
+ctx.save();
+
+ctx.translate(player.x,player.y);
+
+ctx.rotate(player.direction);
+
+mouth += 0.12;
+
+const open = Math.abs(Math.sin(mouth))*0.18;
+
+ctx.fillStyle = "yellow";
+
+ctx.shadowBlur = 20;
+ctx.shadowColor = "yellow";
+
+ctx.beginPath();
+
+ctx.arc(
+0,
+0,
+player.radius,
+open*Math.PI,
+(2-open)*Math.PI
+);
+
+ctx.lineTo(0,0);
+
+ctx.fill();
+
+ctx.restore();
+
+}
+
+function drawEnemy(enemy){
+
+ctx.save();
+
+ctx.translate(enemy.x,enemy.y);
+
+ctx.rotate(enemy.angle);
+
+ctx.fillStyle = enemy.color;
+
+ctx.shadowBlur = 15;
+ctx.shadowColor = enemy.color;
+
+ctx.beginPath();
+
+ctx.rect(-6,-5,12,10);
+
+ctx.fill();
+
+ctx.beginPath();
+
+ctx.moveTo(-6,0);
+
+for(let i=0;i<8;i++){
+
+ctx.lineTo(
+-6-i*3,
+Math.sin(Date.now()/120+i)*2
+);
+
+}
+
+ctx.strokeStyle = enemy.color;
+ctx.lineWidth = 2;
+ctx.stroke();
+
+ctx.restore();
 
 }
 
@@ -379,3 +704,104 @@ ctx.fill();
 });
 
 }
+
+function drawRetroBackground(){
+
+ctx.fillStyle = "black";
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+for(let i=0;i<canvas.height;i+=4){
+
+ctx.fillStyle = "rgba(255,255,255,0.03)";
+ctx.fillRect(0,i,canvas.width,1);
+
+}
+
+}
+
+function drawHUD(){
+
+ctx.fillStyle = "#00ffee";
+
+ctx.font = "18px Courier New";
+
+ctx.fillText("VIDAS: " + lives,40,40);
+ctx.fillText("PUNTOS: " + score,250,40);
+ctx.fillText("PASTILLAS: " + pelletsEaten + "/15",500,40);
+
+ctx.fillStyle = "#ffffff";
+
+ctx.fillText("1 = ESTROGENO",40,90);
+ctx.fillText("2 = PROGESTERONA",380,90);
+ctx.fillText("3 = LH SURGE",760,90);
+
+ctx.strokeStyle = "white";
+
+ctx.strokeRect(40,110,220,18);
+ctx.strokeRect(380,110,220,18);
+ctx.strokeRect(760,110,220,18);
+
+ctx.fillStyle = "#ff66ff";
+ctx.fillRect(40,110,estrogenBar*2.2,18);
+
+ctx.fillStyle = "#66a3ff";
+ctx.fillRect(380,110,progesteroneBar*2.2,18);
+
+ctx.fillStyle = "#ffff66";
+ctx.fillRect(760,110,lhBar*2.2,18);
+
+ctx.fillStyle = "white";
+
+ctx.font = "15px Courier New";
+
+ctx.fillText("x2 puntos",40,150);
+ctx.fillText("espermas lentos",380,150);
+ctx.fillText("comer espermas",760,150);
+
+if(estrogenMode){
+
+ctx.fillText("ACTIVO",180,150);
+
+}
+
+if(progesteroneMode){
+
+ctx.fillText("ACTIVO",540,150);
+
+}
+
+if(lhMode){
+
+ctx.fillText("ACTIVO",920,150);
+
+}
+
+}
+
+function gameLoop(){
+
+drawRetroBackground();
+
+movePlayer();
+
+moveEnemies();
+
+eatPellets();
+
+checkEnemyCollision();
+
+drawHUD();
+
+drawWalls();
+
+drawPellets();
+
+drawPlayer();
+
+enemies.forEach(drawEnemy);
+
+requestAnimationFrame(gameLoop);
+
+}
+
+gameLoop();
