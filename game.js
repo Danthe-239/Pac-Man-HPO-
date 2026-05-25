@@ -63,8 +63,8 @@ let lhMode = false;
 
 const questions = [
 
-{q:"¿Qué hormona provoca la ovulación?",o:["LH","Insulina","Melatonina","FSH"],a:0,p:"lh"},
-{q:"¿Qué órgano produce estrógeno?",o:["Ovario","Riñón","Pulmón","Hígado"],a:0,p:"estrogen"},
+{q:"What hormone triggers ovulation?",o:["LH","Insulin","Melatonin","FSH"],a:0,p:"lh"},
+{q:"Which organ produces estrogen?",o:["Ovario","Riñón","Pulmón","Hígado"],a:0,p:"estrogen"},
 {q:"¿Qué hormona mantiene el embarazo?",o:["Progesterona","Insulina","Cortisol","Dopamina"],a:0,p:"progesterone"},
 {q:"¿Dónde ocurre la fecundación?",o:["Trompas","Pulmón","Corazón","Cerebro"],a:0,p:"lh"},
 {q:"¿Qué hormona prepara el útero?",o:["Progesterona","FSH","Melatonina","Serotonina"],a:0,p:"progesterone"},
