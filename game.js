@@ -2,12 +2,12 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 canvas.width = 1000;
-canvas.height = 760;
+canvas.height = 900;
 
 const TILE = 28;
 
 const offsetX = 70;
-const offsetY = 170;
+const offsetY = 220;
 
 const questionBox = document.getElementById("questionBox");
 const questionText = document.getElementById("questionText");
@@ -60,6 +60,8 @@ let estrogenMode = false;
 let progesteroneMode = false;
 let lhMode = false;
 
+let usedQuestions = [];
+
 const powers = {
 
 estrogen:{
@@ -70,13 +72,13 @@ time:8000
 
 progesterone:{
 name:"Progesterona",
-effect:"Ralentiza espermas",
+effect:"Espermas lentos",
 time:8000
 },
 
 lh:{
 name:"LH Surge",
-effect:"Permite comer espermas",
+effect:"Comer espermas",
 time:8000
 }
 
@@ -330,39 +332,63 @@ y: offsetY + TILE*1.5,
 
 radius:13,
 
-speed:2.5,
+speed:1.9,
 
 direction:0
 
 };
 
-const enemies = [];
+const enemies = [
 
-const colors = [
-"red",
-"cyan",
-"lime",
-"orange",
-"pink",
-"purple"
-];
-
-for(let i=0;i<6;i++){
-
-enemies.push({
-
-x: offsetX + TILE*14,
-y: offsetY + TILE*10,
-
-color: colors[i],
-
-speed:1.2,
-
+{
+x:450,
+y:500,
+color:"red",
+speed:0.9,
 angle:0
+},
 
-});
+{
+x:490,
+y:500,
+color:"cyan",
+speed:0.9,
+angle:0
+},
 
+{
+x:530,
+y:500,
+color:"lime",
+speed:0.9,
+angle:0
+},
+
+{
+x:570,
+y:500,
+color:"orange",
+speed:0.9,
+angle:0
+},
+
+{
+x:610,
+y:500,
+color:"pink",
+speed:0.9,
+angle:0
+},
+
+{
+x:650,
+y:500,
+color:"purple",
+speed:0.9,
+angle:0
 }
+
+];
 
 function gridPos(x,y){
 
@@ -611,11 +637,14 @@ ctx.translate(player.x,player.y);
 
 ctx.rotate(player.direction);
 
-mouth += 0.18;
+mouth += 0.12;
 
-const open = Math.abs(Math.sin(mouth))*0.22;
+const open = Math.abs(Math.sin(mouth))*0.18;
 
 ctx.fillStyle = "yellow";
+
+ctx.shadowBlur = 15;
+ctx.shadowColor = "yellow";
 
 ctx.beginPath();
 
@@ -645,9 +674,12 @@ ctx.rotate(enemy.angle);
 
 ctx.fillStyle = enemy.color;
 
+ctx.shadowBlur = 12;
+ctx.shadowColor = enemy.color;
+
 ctx.beginPath();
 
-ctx.ellipse(0,0,6,4,0,0,Math.PI*2);
+ctx.rect(-5,-4,10,8);
 
 ctx.fill();
 
@@ -655,11 +687,11 @@ ctx.beginPath();
 
 ctx.moveTo(-6,0);
 
-for(let i=0;i<10;i++){
+for(let i=0;i<8;i++){
 
 ctx.lineTo(
 -6-i*3,
-Math.sin(Date.now()/100+i)*2.5
+Math.sin(Date.now()/120+i)*2
 );
 
 }
@@ -676,13 +708,13 @@ ctx.restore();
 
 function drawWalls(){
 
-ctx.strokeStyle = "#4d7cff";
+ctx.strokeStyle = "#00aeff";
 
 ctx.lineWidth = 4;
 
-ctx.shadowBlur = 10;
+ctx.shadowBlur = 15;
 
-ctx.shadowColor = "#4d7cff";
+ctx.shadowColor = "#00aeff";
 
 for(let row=0; row<map.length; row++){
 
@@ -712,7 +744,7 @@ ctx.shadowBlur = 0;
 
 function drawPellets(){
 
-ctx.fillStyle = "hotpink";
+ctx.fillStyle = "#ff66ff";
 
 pellets.forEach(p=>{
 
@@ -757,7 +789,7 @@ points *= 2;
 
 score += points;
 
-if(pelletsEaten >= 10){
+if(pelletsEaten >= 15){
 
 pelletsEaten = 0;
 
@@ -773,12 +805,6 @@ if(pellets.length === 0){
 
 createPellets();
 
-enemies.forEach(enemy=>{
-
-enemy.speed += 0.08;
-
-});
-
 }
 
 }
@@ -787,9 +813,23 @@ function showQuestion(){
 
 gamePaused = true;
 
-const q = questions[
-Math.floor(Math.random()*questions.length)
-];
+if(usedQuestions.length >= questions.length){
+
+usedQuestions = [];
+
+}
+
+let random;
+
+do{
+
+random = Math.floor(Math.random()*questions.length);
+
+}while(usedQuestions.includes(random));
+
+usedQuestions.push(random);
+
+const q = questions[random];
 
 questionText.innerText = q.q;
 
@@ -853,7 +893,7 @@ setTimeout(()=>{
 
 estrogenMode = false;
 
-},powers.estrogen.time);
+},8000);
 
 }
 
@@ -867,7 +907,7 @@ setTimeout(()=>{
 
 progesteroneMode = false;
 
-},powers.progesterone.time);
+},8000);
 
 }
 
@@ -881,7 +921,7 @@ setTimeout(()=>{
 
 lhMode = false;
 
-},powers.lh.time);
+},8000);
 
 }
 
@@ -900,8 +940,8 @@ if(dist < 16){
 
 if(lhMode){
 
-enemy.x = offsetX + TILE*14;
-enemy.y = offsetY + TILE*10;
+enemy.x = 540;
+enemy.y = 500;
 
 score += 250;
 
@@ -932,57 +972,79 @@ function drawHUD(){
 
 ctx.fillStyle = "black";
 
-ctx.fillRect(0,0,canvas.width,140);
+ctx.fillRect(0,0,canvas.width,170);
 
-ctx.fillStyle = "white";
+ctx.fillStyle = "#00ffcc";
 
-ctx.font = "20px Arial";
+ctx.font = "18px Courier New";
 
-ctx.fillText("❤️ Vidas: " + lives,40,35);
+ctx.fillText("VIDAS: " + lives,40,40);
 
-ctx.fillText("⭐ Puntos: " + score,240,35);
+ctx.fillText("PUNTOS: " + score,240,40);
 
-ctx.fillText("🟣 Pastillas: " + pelletsEaten + "/10",480,35);
+ctx.fillText("PASTILLAS: " + pelletsEaten + "/15",500,40);
 
-ctx.fillText("⚡ PODERES HPO",760,30);
+ctx.fillStyle = "#ff66ff";
+ctx.fillText("ESTROGENO",40,90);
 
-ctx.fillText("Estrógeno = x2 puntos",40,75);
-ctx.fillText("Progesterona = espermas lentos",320,75);
-ctx.fillText("LH Surge = comer espermas",720,75);
+ctx.fillStyle = "#66a3ff";
+ctx.fillText("PROGESTERONA",350,90);
+
+ctx.fillStyle = "#ffff66";
+ctx.fillText("LH SURGE",730,90);
 
 ctx.strokeStyle = "white";
 
-ctx.strokeRect(40,95,200,16);
-ctx.strokeRect(320,95,200,16);
-ctx.strokeRect(720,95,200,16);
+ctx.strokeRect(40,110,200,18);
+ctx.strokeRect(350,110,200,18);
+ctx.strokeRect(730,110,200,18);
 
-ctx.fillStyle = "#ff4fd8";
-ctx.fillRect(40,95,estrogenBar*2,16);
+ctx.fillStyle = "#ff66ff";
+ctx.fillRect(40,110,estrogenBar*2,18);
 
-ctx.fillStyle = "#7d7dff";
-ctx.fillRect(320,95,progesteroneBar*2,16);
+ctx.fillStyle = "#66a3ff";
+ctx.fillRect(350,110,progesteroneBar*2,18);
 
-ctx.fillStyle = "#ffe14d";
-ctx.fillRect(720,95,lhBar*2,16);
+ctx.fillStyle = "#ffff66";
+ctx.fillRect(730,110,lhBar*2,18);
+
+ctx.fillStyle = "white";
+
+ctx.font = "15px Courier New";
+
+ctx.fillText("x2 puntos",40,150);
+ctx.fillText("Espermas lentos",350,150);
+ctx.fillText("Comer espermas",730,150);
 
 if(estrogenMode){
 
-ctx.fillStyle = "#ff4fd8";
-ctx.fillText("ACTIVO",110,128);
+ctx.fillText("ACTIVO",120,150);
 
 }
 
 if(progesteroneMode){
 
-ctx.fillStyle = "#7d7dff";
-ctx.fillText("ACTIVO",395,128);
+ctx.fillText("ACTIVO",470,150);
 
 }
 
 if(lhMode){
 
-ctx.fillStyle = "#ffe14d";
-ctx.fillText("ACTIVO",800,128);
+ctx.fillText("ACTIVO",840,150);
+
+}
+
+}
+
+function drawRetroBackground(){
+
+ctx.fillStyle = "black";
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+for(let i=0;i<canvas.height;i+=4){
+
+ctx.fillStyle = "rgba(255,255,255,0.03)";
+ctx.fillRect(0,i,canvas.width,1);
 
 }
 
@@ -990,7 +1052,7 @@ ctx.fillText("ACTIVO",800,128);
 
 function gameLoop(){
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
+drawRetroBackground();
 
 movePlayer();
 
